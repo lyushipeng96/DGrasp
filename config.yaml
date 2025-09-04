@@ -1,0 +1,65 @@
+# 路径
+data_root_prefix: /data/LyuShipeng/Digit_sensor/Digit_dataset
+train_meta: ./data/train.jsonl
+val_meta:   ./data/val.jsonl
+
+# 输出
+work_dir: ./outputs/vae_two_stage
+image_size: 256
+
+# VAE 结构与优化
+vae:
+  sample_size: 256
+  in_channels: 3
+  out_channels: 3
+  block_out_channels: [64, 128, 256, 256]
+  latent_channels: 4
+  down_block_types: ["DownEncoderBlock2D","DownEncoderBlock2D","DownEncoderBlock2D","DownEncoderBlock2D"]
+  up_block_types:   ["UpDecoderBlock2D","UpDecoderBlock2D","UpDecoderBlock2D","UpDecoderBlock2D"]
+  batch_size: 32
+  lr: 3.0e-4
+  num_steps: 100000
+  save_every: 20000
+
+mixed_precision: "bf16"    # 若不稳定可先用 "no"
+num_workers: 8
+max_grad_norm: 0           # 欠拟合建议 0；稳定后可 5~10
+
+# 两阶段调度
+train_schedule:
+  stageA_steps: 40000
+
+# Stage A：v1 同构（纯 L1@[-1,1]、KL=0、均值训练）——该逻辑在脚本中已固定
+stageA:
+  lpips_w: 0.0
+  fft_w: 0.0
+
+# Stage B：v2 逻辑（同样在 [-1,1] 域；KL 线性预热）
+stageB:
+  rec_l1_raw_w: 0.45       # = (原0.9@[0,1]) × 0.5 换算到 [-1,1]
+  rec_mse_raw_w: 0.025     # = (原0.1@[0,1]) × 0.25 换算到 [-1,1]
+  kl_weight: 2.0e-4        # 同域后与像素项平衡，先从 2e-4 起
+  recon_use_mean_steps: 30000
+  lpips_w: 0.0
+  fft_w: 0.0
+
+# 验证 & FID（每 1000 步）
+eval:
+  val_interval_steps: 5000
+  val_max_images: 1500
+  val_batch_size: 16
+  compute_fid: true
+  fid_start_step: 40000
+  fid_use_posterior_sampling: true
+  fid_temperature: 0.20     # 可在 {0.15,0.20,0.25} 搜
+
+# 日志
+logging:
+  use_wandb: true
+  project: tactile_vae
+  run_name: "vae_two_stage_A40k_B60k_rawDomain_val1k"
+  init_timeout: 300
+
+# 调试
+debug:
+  overfit_n: 0

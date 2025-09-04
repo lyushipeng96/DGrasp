@@ -1,0 +1,19 @@
+# PyTorch with CUDA 12.4 support
+# --index-url https://download.pytorch.org/whl/cu124
+# torch==2.4.1
+# torchvision==0.19.1
+# torchaudio==2.4.1
+
+# Project dependencies
+diffusers>=0.29
+transformers>=4.40
+accelerate>=0.30
+safetensors>=0.4
+pillow>=10.2
+pyyaml>=6.0
+tqdm>=4.66
+numpy>=1.26
+
+# Optional dependencies (uncomment if needed)
+# xformers
+# bitsandbytes
